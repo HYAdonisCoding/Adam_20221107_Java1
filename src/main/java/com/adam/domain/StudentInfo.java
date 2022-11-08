@@ -10,6 +10,30 @@ public class StudentInfo {
     private String age;
     private String height;
     private int id;
+    private String updatetime;
+
+    public StudentInfo(String name, String age, String height, int id, String updatetime) {
+        this.name = name;
+        this.age = age;
+        this.height = height;
+        this.id = id;
+        this.updatetime = updatetime;
+    }
+
+    public StudentInfo(String name, String age, String height, String updatetime) {
+        this.name = name;
+        this.age = age;
+        this.height = height;
+        this.updatetime = updatetime;
+    }
+
+    public String getUpdatetime() {
+        return updatetime;
+    }
+
+    public void setUpdatetime(String updatetime) {
+        this.updatetime = updatetime;
+    }
 
     public String getName() {
         return name;
@@ -43,10 +67,14 @@ public class StudentInfo {
         this.id = id;
     }
 
-    public StudentInfo(String name, String age, String height, int id) {
-        this.name = name;
-        this.age = age;
-        this.height = height;
-        this.id = id;
+    @Override
+    public String toString() {
+        return "StudentInfo{" +
+                "name='" + name + '\'' +
+                ", age='" + age + '\'' +
+                ", height='" + height + '\'' +
+                ", id=" + id +
+                ", updatetime='" + updatetime + '\'' +
+                '}';
     }
 }
