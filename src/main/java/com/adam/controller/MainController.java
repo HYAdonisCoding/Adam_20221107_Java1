@@ -1,7 +1,9 @@
 package com.adam.controller;
 
+import com.adam.domain.Respone;
 import com.adam.domain.StudentInfo;
 import com.adam.service.StudentInfoService;
+import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -10,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -58,8 +62,11 @@ public class MainController {
         System.out.println("---addUser---" + " - " + name + " - " + age + " - " + height);
         String check = check(name, age, height);
         String time = getCurrentTime();
+        OutputStream stream = response.getOutputStream();
+//        PrintWriter writer = response.getWriter();
         if (check.length() > 0) {
-            response.getWriter().print(check + time + "\n");
+            System.out.println(check + time + "\n");
+            dealParamsError(stream, response);
             return;
         }
 
@@ -69,10 +76,12 @@ public class MainController {
             List<StudentInfo> list = new ArrayList<>();
             list.add(s);
             studentInfoService.insertStudentInfo(list);
-            response.getWriter().print("addUser - "+ name +" successful." + "\n");
+
+            dealSuccess("addUser - "+ name +" successful." + "\n", name, stream, response);
 
         } catch (Exception e) {
             System.out.println("页面无法访问" + e);
+            dealError(stream, response);
             e.printStackTrace();
         } finally {
             System.out.println("addUser finally");
@@ -83,17 +92,21 @@ public class MainController {
         System.out.println("---deleteUser---" + " - " + name + " - " + age + " - " + height);
         String check = check(name, age, height);
         String time = getCurrentTime();
+        OutputStream stream = response.getOutputStream();
+//        PrintWriter writer = response.getWriter();
         if (check.length() > 0) {
-            response.getWriter().print(check + time + "\n");
+            System.out.println(check + time + "\n");
+            dealParamsError(stream, response);
             return;
         }
         try {
             studentInfoService.deleteStudentInfo(name);
-            response.getWriter().print("deleteUser - "+ name +" successful." + "\n");
+
+            dealSuccess("deleteUser - "+ name +" successful." + "\n", name, stream, response);
 
         } catch (Exception e) {
             System.out.println("页面无法访问" + "User " + name + "not exit.\n" + e);
-
+            dealError(stream, response);
             e.printStackTrace();
         } finally {
             System.out.println("addUser finally");
@@ -104,19 +117,23 @@ public class MainController {
         System.out.println("---updateUser---" + " - " + name + " - " + age + " - " + height);
         String check = check(name, age, height);
         String time = getCurrentTime();
+        OutputStream stream = response.getOutputStream();
+//        PrintWriter writer = response.getWriter();
         if (check.length() > 0) {
-            response.getWriter().print(check + time + "\n");
+            System.out.println(check + time + "\n");
+            dealParamsError(stream, response);
             return;
         }
         StudentInfo studentInfo = new StudentInfo(name, age, height, time);
 
         try {
             studentInfoService.updateStudentInfo(studentInfo);
-            response.getWriter().print("updateUser - "+ name +" successful." + "\n");
+
+            dealSuccess("updateUser - "+ name +" successful." + "\n", name, stream, response);
 
         } catch (Exception e) {
             System.out.println("页面无法访问" + "User " + name + "not exit.\n" + e);
-
+            dealError(stream, response);
             e.printStackTrace();
         } finally {
             System.out.println("updateUser finally");
@@ -125,17 +142,32 @@ public class MainController {
     @RequestMapping(value = "test/getUsers", method = RequestMethod.POST)
     public void getUsers(String name, HttpServletResponse response) throws IOException {
         System.out.println("---getUser---" + name);
+        OutputStream stream = response.getOutputStream();
+//        PrintWriter writer = response.getWriter();
         if (name == null || name.length() <= 0) {
-            response.getWriter().print("getUser - " +" error." + "\n" + name + "\n");
+            System.out.println("getUser - " +" error." + "\n" + name + "\n");
+            dealParamsError(stream, response);
             return;
         }
         try {
             List<StudentInfo> studentInfos = studentInfoService.selectStudentInfo(name);
-            response.getWriter().print("getUser - " +" successful." + "\n" + studentInfos + "\n");
+            String message = "getUser - " +" successful." + "\n";
+            response.setHeader("Content-type","text/html;charset=UTF-8");//向浏览器发送一个响应头，设置浏览器的解码方式为UTF-8
+            Gson gson = new Gson();
+            Respone<List<StudentInfo>> listRespone = new Respone<>("0", message, studentInfos);
+            String data = gson.toJson(listRespone);
 
+
+            stream.write(data.getBytes("UTF-8"));
+            //使用Writer向客户端写入中文:
+            response.setCharacterEncoding("UTF-8");//设置Response的编码方式为UTF-8
+
+            response.setHeader("Content-type","text/html;charset=UTF-8");//向浏览器发送一个响应头，设置浏览器的解码方式为UTF-8,其实设置了本句，也默认设置了Response的编码方式为UTF-8，但是开发中最好两句结合起来使用
+            //response.setContentType("text/html;charset=UTF-8");同上句代码作用一样
+//            writer.write(data);
         } catch (Exception e) {
             System.out.println("页面无法访问" + e);
-
+            dealError(stream, response);
             e.printStackTrace();
         } finally {
             System.out.println("getUser finally");
@@ -145,17 +177,85 @@ public class MainController {
     @RequestMapping(value = "test/getAllUser", method = RequestMethod.POST)
     public void getAllUser(HttpServletResponse response) throws IOException {
         System.out.println("---getAllUser---");
+        OutputStream stream = response.getOutputStream();
+//        PrintWriter writer = response.getWriter();
         try {
             List<StudentInfo> studentInfos = studentInfoService.selectAllStudentInfo();
-            response.getWriter().print("getAllUser - " +" successful." + "\n" + studentInfos + "\n");
+            String message = "getAllUser - " +" successful." + "\n";
+            response.setHeader("Content-type","text/html;charset=UTF-8");//向浏览器发送一个响应头，设置浏览器的解码方式为UTF-8
+            Gson gson = new Gson();
+            Respone<List<StudentInfo>> listRespone = new Respone<>("0", message, studentInfos);
+            String data = gson.toJson(listRespone);
 
+
+            stream.write(data.getBytes("UTF-8"));
+            //使用Writer向客户端写入中文:
+            response.setCharacterEncoding("UTF-8");//设置Response的编码方式为UTF-8
+
+            response.setHeader("Content-type","text/html;charset=UTF-8");//向浏览器发送一个响应头，设置浏览器的解码方式为UTF-8,其实设置了本句，也默认设置了Response的编码方式为UTF-8，但是开发中最好两句结合起来使用
+            //response.setContentType("text/html;charset=UTF-8");同上句代码作用一样
+//            writer.write(data);
+            stream.flush();
+            stream.close();
         } catch (Exception e) {
             System.out.println("页面无法访问" + e);
-
+            dealError(stream, response);
             e.printStackTrace();
         } finally {
             System.out.println("getAllUser finally");
         }
+    }
+    private void dealSuccess(String message, String dataString, OutputStream stream, HttpServletResponse response) throws IOException {
+
+        Respone<String> listRespone = new Respone<>("0", message, dataString);
+        Gson gson = new Gson();
+        String data = gson.toJson(listRespone);
+
+
+        stream.write(data.getBytes("UTF-8"));
+        //使用Writer向客户端写入中文:
+        response.setCharacterEncoding("UTF-8");//设置Response的编码方式为UTF-8
+
+        response.setHeader("Content-type","text/html;charset=UTF-8");//向浏览器发送一个响应头，设置浏览器的解码方式为UTF-8,其实设置了本句，也默认设置了Response的编码方式为UTF-8，但是开发中最好两句结合起来使用
+
+//        writer.write(data);
+        stream.flush();
+        stream.close();
+    }
+    private void dealParamsError(OutputStream stream,HttpServletResponse response) throws IOException {
+        String message = "参数异常，请稍后再试";
+        Respone<String> listRespone = new Respone<>("1", message, message);
+        Gson gson = new Gson();
+        String data = gson.toJson(listRespone);
+
+
+        stream.write(data.getBytes("UTF-8"));
+        //使用Writer向客户端写入中文:
+        response.setCharacterEncoding("UTF-8");//设置Response的编码方式为UTF-8
+
+        response.setHeader("Content-type","text/html;charset=UTF-8");//向浏览器发送一个响应头，设置浏览器的解码方式为UTF-8,其实设置了本句，也默认设置了Response的编码方式为UTF-8，但是开发中最好两句结合起来使用
+
+//        writer.write(data);
+        stream.flush();
+        stream.close();
+    }
+
+    private void dealError(OutputStream stream, HttpServletResponse response) throws IOException {
+        String message = "网络异常，请稍后再试";
+        Respone<String> listRespone = new Respone<>("1", message, message);
+        Gson gson = new Gson();
+        String data = gson.toJson(listRespone);
+
+
+        stream.write(data.getBytes("UTF-8"));
+        //使用Writer向客户端写入中文:
+        response.setCharacterEncoding("UTF-8");//设置Response的编码方式为UTF-8
+
+        response.setHeader("Content-type","text/html;charset=UTF-8");//向浏览器发送一个响应头，设置浏览器的解码方式为UTF-8,其实设置了本句，也默认设置了Response的编码方式为UTF-8，但是开发中最好两句结合起来使用
+
+//        writer.write(data);
+        stream.flush();
+        stream.close();
     }
 
 
